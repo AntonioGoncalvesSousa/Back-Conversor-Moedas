@@ -6,6 +6,7 @@ import com.coinchange.coinChange.domain.mapper.usuario.UsuarioMapper;
 import com.coinchange.coinChange.domain.models.Usuario;
 import com.coinchange.coinChange.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -18,16 +19,22 @@ public class UsuarioService {
 
     public void cadastrarUsuario(UsuarioRequestDTO dto){
         Usuario user = UsuarioMapper.toEntity(dto);
-        usuarioRepository.save(user);
+        try {
+            usuarioRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new RuntimeException("Nome de usuário já está em uso");
+        }
     }
+
+
 
     public UsuarioResponseDTO login(UsuarioRequestDTO dto){
         Optional<Usuario> user = usuarioRepository.findByNomeUsuario(dto.getNomeUsuario());
 
-        Usuario usuario = user.orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        Usuario usuario = user.orElseThrow(() -> new RuntimeException("Credenciais inválidas"));
 
         if (!usuario.getSenha().equals(dto.getSenha())){
-            throw new RuntimeException("Senha Incorreta");
+            throw new RuntimeException("Credenciais inválidas");
         }
 
         return UsuarioMapper.toResponseDTO(usuario);
